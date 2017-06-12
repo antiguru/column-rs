@@ -1,6 +1,7 @@
 #![feature(test)]
 
 extern crate test;
+extern crate columnar;
 #[macro_use] extern crate columnar_derive;
 
 #[derive(Columnar, Debug, Default)]
