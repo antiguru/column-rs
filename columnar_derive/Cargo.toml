@@ -1,0 +1,17 @@
+[package]
+name = "columnar_derive"
+version = "0.1.0"
+authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
+
+[lib]
+name = "columnar_derive"
+proc-macro = true
+
+[features]
+default = []
+verbose = [ "rustfmt" ]
+
+[dependencies]
+syn = "0.11"
+quote = "0.3"
+rustfmt = { version = "0.8", optional = true }

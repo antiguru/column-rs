@@ -1,0 +1,17 @@
+[package]
+name = "columnar"
+version = "0.1.0"
+publish = false
+authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
+
+[[example]]
+name = "columnar"
+
+[dependencies]
+columnar_derive = { path = "columnar_derive", features = [ "verbose" ] }
+
+[profile.release]
+debug = true
+
+[profile.bench]
+debug = true
