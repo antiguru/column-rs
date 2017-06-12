@@ -4,6 +4,8 @@ extern crate test;
 extern crate columnar;
 #[macro_use] extern crate columnar_derive;
 
+use std::mem::size_of;
+
 #[derive(Columnar, Debug, Default)]
 struct Data {
     id: usize,
@@ -20,6 +22,7 @@ fn data_columnar(b: &mut test::Bencher) {
     }
     let mut dc = DataColumnar::with_capacity(size);
     dc.extend(a);
+    b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
         for mut e in dc.iter_mut() {
             *e.id *= 2;
@@ -45,6 +48,7 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
     cb.extend(b);
     test::black_box(r.first().unwrap().dummy);
     cr.extend(r);
+    bench.bytes = (size_of::<f64>() * size * 3) as u64;
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = ca.iter().zip(cb.iter()).zip(cr.iter_mut());
         for ((ea, eb), mut er) in zip {
@@ -65,6 +69,7 @@ fn data_row_add_assign(bench: &mut test::Bencher) {
         r.push(Data { id: 0, val: 1., ..Data::default()});
     }
     test::black_box(r.first().unwrap().dummy);
+    bench.bytes = (size_of::<f64>() * size * 3) as u64;
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = a.iter().zip(b.iter()).zip(r.iter_mut());
         for ((ea, eb), mut er) in zip {
@@ -80,6 +85,7 @@ fn data_row(b: &mut test::Bencher) {
     for i in 0..size {
         a.push(Data { id: i, val: 15., ..Data::default()});
     }
+    b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
         for mut e in a.iter_mut() {
             e.id *= 2;
