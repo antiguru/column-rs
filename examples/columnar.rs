@@ -7,6 +7,12 @@ struct Data {
     val: f64,
 }
 
+#[derive(Columnar, Debug)]
+struct DataGen<A: Copy> {
+    id: A,
+    val: f64,
+}
+
 fn main() {
     let mut u = DataColumnar::new();
 
@@ -23,4 +29,9 @@ fn main() {
         println!("Element: {:?}", e);
     }
 
+    let mut g = DataGenColumnar::new();
+    g.extend(vec![DataGen {id: "A", val: 1.}]);
+    for e in g.iter() {
+        println!("Element: {:?}", e);
+    }
 }
