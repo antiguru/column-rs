@@ -51,6 +51,10 @@ This example is contained in the `columnar` crate, you can run it from
 the crate's root directory by typing
 
 ```
-% cargo run --example columnar                                                      
-Running `target/debug/examples/columnar`                                                       Element: DataRef { id: 0, val: 3.141 }                                                         Element: DataRef { id: 1, val: 42 }                                                            Element: DataRef { id: 0, val: 6.282 }                                                         Element: DataRef { id: 1, val: 84 }
+% cargo run --example columnar
+Running `target/debug/examples/columnar`
+Element: DataRef { id: 0, val: 3.141 }
+Element: DataRef { id: 1, val: 42 }
+Element: DataRef { id: 0, val: 6.282 }
+Element: DataRef { id: 1, val: 84 }
 ```
