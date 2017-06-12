@@ -13,6 +13,10 @@ extern crate rustfmt;
 use proc_macro::TokenStream;
 use syn::Ident;
 
+
+
+const COLUMNAR_LIFETIME: &str = "'columnar";
+
 #[proc_macro_derive(Columnar)]
 pub fn derive_columnar(input: TokenStream) -> TokenStream {
     let source = input.to_string();
@@ -28,13 +32,19 @@ pub fn derive_columnar(input: TokenStream) -> TokenStream {
 
     let result_string = result.to_string();
     if cfg!(feature = "verbose") {
-        print_generated_code(result_string);
+        match print_generated_code(result_string, &ast, source) {
+            Err(reason) => panic!(reason),
+            Ok(_) => {},
+        }
     }
     result.to_string().parse().unwrap()
 }
 
 #[cfg(feature = "verbose")]
-fn print_generated_code(result_string: String) {
+fn print_generated_code(result_string: String, ast: &syn::MacroInput, source: String) -> ::std::io::Result<()> {
+    use std::fs::File;
+    use std::io::prelude::Write;
+
     // Use rustfmt for pretty-printing
     let input = rustfmt::Input::Text(result_string);
     let config = rustfmt::config::Config::default();
@@ -43,15 +53,21 @@ fn print_generated_code(result_string: String) {
     assert!(error_summary.has_no_errors());
     for &(ref file_name, ref text) in &file_map {
         if file_name == "stdin" {
-            println!("Formatted source:\n{}", text.to_string());
+            let text = text.to_string();
+            let mut file = File::create(format!("target/derive_columnar_{}.rs", ast.ident.as_ref())).expect("Failed to open file");
+            file.write_all(b"extern crate columnar;\n")?;
+            file.write_all(source.as_bytes())?;
+            file.write_all(b"\n")?;
+            file.write_all(text.as_bytes())?;
             break;
         }
     }
+    Ok(())
 }
 
 #[cfg(not(feature = "verbose"))]
-fn print_generated_code(result_string: &String) {
-    // Nop
+fn print_generated_code(_result_string: String, _ast: &syn::MacroInput, _source: String) -> ::std::io::Result<()> {
+    Ok(())
 }
 struct ColumnarData<'a> {
     type_ref: Ident,
@@ -62,6 +78,8 @@ struct ColumnarData<'a> {
 
     ast: &'a syn::MacroInput,
     fields: &'a [syn::Field],
+
+    lt_generics: syn::Generics,
 }
 
 impl<'a> ColumnarData<'a> {
@@ -69,13 +87,37 @@ impl<'a> ColumnarData<'a> {
     fn new(ast: &'a syn::MacroInput, variant_data: &'a syn::VariantData) -> Self {
         let fields = match *variant_data {
             syn::VariantData::Struct(ref fields) => fields,
-            ref e => panic!("Unsupported content: {:?}", e),
+            syn::VariantData::Tuple(ref elements) => panic!("Unsupported content: {:?}", elements),
+            syn::VariantData::Unit => panic!("Unsupported content: Unit"),
         };
         let type_ref: Ident = Ident::from(format!("{}Ref", ast.ident));
         let type_ref_mut: Ident = Ident::from(format!("{}RefMut", ast.ident));
         let type_columnar: Ident = Ident::from(format!("{}Columnar", ast.ident));
         let type_iter: Ident = Ident::from(format!("{}ColumnarIterator", ast.ident));
         let type_iter_mut: Ident = Ident::from(format!("{}ColumnarIteratorMut", ast.ident));
+
+        let mut lt_generics = ast.generics.clone();
+        lt_generics.lifetimes.push(syn::LifetimeDef::new(COLUMNAR_LIFETIME));
+
+
+        // Add a where X: 'lifetime to every generic parameter
+        for ty_param in &lt_generics.ty_params {
+            let mut segment = syn::PathSegment::from(ty_param.ident.clone());
+            let parameter_data = syn::AngleBracketedParameterData {
+                lifetimes: vec![],
+                types: vec![],
+                bindings: vec![],
+            };
+            segment.parameters = syn::PathParameters::AngleBracketed(parameter_data);
+
+            let where_bound = syn::WhereBoundPredicate {
+                bound_lifetimes: vec![],
+                bounded_ty: syn::Ty::Path(None, syn::Path::from(segment)),
+                bounds: vec![syn::TyParamBound::Region(syn::Lifetime::new(COLUMNAR_LIFETIME))],
+            };
+            lt_generics.where_clause.predicates.push(syn::WherePredicate::BoundPredicate(where_bound));
+        }
+
         Self {
             ast,
             fields,
@@ -84,6 +126,7 @@ impl<'a> ColumnarData<'a> {
             type_columnar,
             type_iter,
             type_iter_mut,
+            lt_generics,
         }
     }
 
@@ -100,8 +143,8 @@ impl<'a> ColumnarData<'a> {
 
         let columnar_impl = self.build_columnar_impl();
         let extend_impl = self.build_extend_impl();
-        let into_iter_impl = self.build_into_iter_impl("iter", false);
-        let into_iter_mut_impl = self.build_into_iter_impl("iter_mut", true);
+        let into_iter_impl = self.build_into_iter_impl(false);
+        let into_iter_mut_impl = self.build_into_iter_impl(true);
         let ref_impl = self.build_ref_impl(&self.type_ref);
         let ref_mut_impl = self.build_ref_impl(&self.type_ref_mut);
         let columnar_iter_impl = self.build_columnar_iter_impl_iter(false);
@@ -139,12 +182,8 @@ impl<'a> ColumnarData<'a> {
     }
 
     fn build_ref_type(&self) -> quote::Tokens {
-        let lifetime_a = || syn::Lifetime { ident: Ident::from("'a") };
+        let lifetime_a = || syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
         let ref name = self.type_ref;
-
-        let mut ref_type_generics: syn::Generics = self.ast.generics.clone();
-        // Add 'a lifetime to Ref type
-        ref_type_generics.lifetimes.push(syn::LifetimeDef::new("'a"));
 
         // Add same lifetime to the field refs
         let ref_type_fields: Vec<_> = self.fields.iter().map(|f| {
@@ -152,23 +191,19 @@ impl<'a> ColumnarData<'a> {
             f.ty = syn::Ty::Rptr(Some(lifetime_a()), Box::new(syn::MutTy { ty: f.ty, mutability: syn::Mutability::Immutable}));
             f
         }).collect();
-        let (impl_generics, ty_generics, where_clause) = ref_type_generics.split_for_impl();
+        let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
         quote! {
             #[derive(Debug)]
             #[allow(dead_code)]
-            pub struct #name #ref_type_generics #where_clause {
+            pub struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
     }
 
     fn build_ref_mut_type(&self) -> quote::Tokens {
-        let lifetime_a = || syn::Lifetime { ident: Ident::from("'a") };
+        let lifetime_a = || syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
         let ref name = self.type_ref_mut;
-
-        let mut ref_type_generics: syn::Generics = self.ast.generics.clone();
-        // Add 'a lifetime to RefMut type
-        ref_type_generics.lifetimes.push(syn::LifetimeDef::new("'a"));
 
         // Add same lifetime and mutability to the field refs
         let ref_type_fields: Vec<_> = self.fields.iter().map(|f| {
@@ -176,10 +211,10 @@ impl<'a> ColumnarData<'a> {
             f.ty = syn::Ty::Rptr(Some(lifetime_a()), Box::new(syn::MutTy { ty: f.ty, mutability: syn::Mutability::Mutable}));
             f
         }).collect();
-        let (impl_generics, ty_generics, where_clause) = ref_type_generics.split_for_impl();
+        let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
         quote! {
             #[allow(dead_code)]
-            pub struct #name #ref_type_generics #where_clause {
+            pub struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
@@ -199,10 +234,9 @@ impl<'a> ColumnarData<'a> {
             };
             segment.parameters = syn::PathParameters::AngleBracketed(parameter_data);
             f.ty = syn::Ty::Path(None, syn::Path::from(segment));
-            // f.ty = syn::Ty::Rptr(Some(lifetime_a()), Box::new(syn::MutTy { ty: f.ty, mutability: syn::Mutability::Mutable}));
             f
         }).collect();
-        let (impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+        let (_impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
         quote! {
             #[allow(dead_code)]
             pub struct #name #ty_generics #where_clause {
@@ -211,11 +245,7 @@ impl<'a> ColumnarData<'a> {
         }
     }
     fn build_columnar_iterator_type(&self, name: &Ident, iter_type_name: &str) -> quote::Tokens {
-        let lifetime_a = || syn::Lifetime { ident: Ident::from("'a") };
-
-        let mut ref_type_generics: syn::Generics = self.ast.generics.clone();
-        // Add 'a lifetime to RefMut type
-        ref_type_generics.lifetimes.push(syn::LifetimeDef::new("'a"));
+        let lifetime_a = || syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
 
         // Encapsulate fields in Vec
         let ref_type_fields: Vec<_> = self.fields.iter().map(|f| {
@@ -231,10 +261,9 @@ impl<'a> ColumnarData<'a> {
             if let Some(ident) = f.ident {
                 f.ident = Some(Ident::from(format!("iter_{}", ident)));
             }
-            // f.ty = syn::Ty::Rptr(Some(lifetime_a()), Box::new(syn::MutTy { ty: f.ty, mutability: syn::Mutability::Mutable}));
             f
         }).collect();
-        let (impl_generics, ty_generics, where_clause) = ref_type_generics.split_for_impl();
+        let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
         quote! {
             #[allow(dead_code)]
             pub struct #name #ty_generics #where_clause {
@@ -246,13 +275,15 @@ impl<'a> ColumnarData<'a> {
     fn build_columnar_impl(&self) -> quote::Tokens {
         let ref name = self.type_columnar;
 
+        let (impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+
         let new = self.build_columnar_new_impl();
         let with_capacity = self.build_columnar_with_capacity_impl();
-        let iter = self.build_columnar_iter_impl(&self.type_iter, "iter", "");
-        let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut");
+        let iter = self.build_columnar_iter_impl(&self.type_iter, "iter", "", &ty_generics);
+        let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
 
         quote! {
-            impl #name {
+            impl#impl_generics #name #ty_generics #where_clause {
                 #new
 
                 #with_capacity
@@ -292,17 +323,16 @@ impl<'a> ColumnarData<'a> {
         }
     }
 
-    fn build_columnar_iter_impl(&self, type_name: &Ident, iter: &str, modifier: &str) -> quote::Tokens {
+    fn build_columnar_iter_impl(&self, type_name: &Ident, iter: &str, modifier: &str, ty_generics: &syn::TyGenerics) -> quote::Tokens {
         // Encapsulate fields in Vec
         let names: Vec<_> = self.fields.iter().map(|f| f.ident.clone().unwrap()).collect();
         let iters: Vec<_> = self.fields.iter().map(|f| Ident::new(format!("iter_{}", f.ident.clone().unwrap()))).collect();
-        let ref name = self.type_iter;
         let iter = Ident::new(iter);
         let fn_name = iter.clone();
         let iter = ::std::iter::repeat(iter);
         let modifier = Ident::new(modifier);
         quote! {
-            pub fn #fn_name(& #modifier self) -> #type_name {
+            pub fn #fn_name(& #modifier self) -> #type_name #ty_generics {
                 #type_name {
                     #(#iters: self.#names.#iter()),*
                 }
@@ -316,10 +346,13 @@ impl<'a> ColumnarData<'a> {
         let names2: Vec<_> = names.clone();
         let ref name = self.ast.ident;
         let ref type_columnar = self.type_columnar;
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+
+        let (lt_impl_generics, _lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
 
         quote! {
-            impl Extend<#name> for #type_columnar {
-                fn extend<T: IntoIterator<Item=#name>>(&mut self, iter: T) {
+            impl #lt_impl_generics Extend<#name#ty_generics> for #type_columnar #ty_generics #lt_where_clause {
+                fn extend<T: IntoIterator<Item=#name#ty_generics>>(&mut self, iter: T) {
                     for element in iter {
                         #(self.#names.push(element.#names2));*
                     }
@@ -328,20 +361,24 @@ impl<'a> ColumnarData<'a> {
         }
     }
 
-    fn build_into_iter_impl(&self, iter: &str, mutable: bool) -> quote::Tokens {
+    fn build_into_iter_impl(&self, mutable: bool) -> quote::Tokens {
         // Encapsulate fields in Vec
         let ref type_columnar = self.type_columnar;
+
+        let (lt_impl_generics, lt_ty_generics, _lt_where_clause) = self.lt_generics.split_for_impl();
+        let (_impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+
 
         let (mut_modifier, item, iter, call) = if mutable {
             (Ident::new("mut"), &self.type_ref_mut, &self.type_iter_mut, Ident::new("iter_mut"))
         } else {
             (Ident::new(""), &self.type_ref, &self.type_iter, Ident::new("iter"))
         };
-
+        let lifetime = Ident::from(COLUMNAR_LIFETIME);
         quote! {
-            impl<'a> IntoIterator for &'a #mut_modifier #type_columnar {
-                type Item = #item<'a>;
-                type IntoIter = #iter<'a>;
+            impl#lt_impl_generics IntoIterator for &#lifetime #mut_modifier #type_columnar #ty_generics #where_clause{
+                type Item = #item#lt_ty_generics;
+                type IntoIter = #iter#lt_ty_generics;
                 fn into_iter(self) -> Self::IntoIter {
                     self.#call()
                 }
@@ -354,10 +391,13 @@ impl<'a> ColumnarData<'a> {
         let names2: Vec<_> = names.clone();
         let ref name = self.ast.ident;
 
+        let (lt_impl_generics, lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+
         quote! {
             #[allow(dead_code)]
-            impl<'a> #type_ref<'a> {
-                fn to_owned(&self) -> #name {
+            impl #lt_impl_generics #type_ref #lt_ty_generics #lt_where_clause {
+                fn to_owned(&self) -> #name#ty_generics {
                     #name {
                         #(#names: *self.#names2),*
                     }
@@ -368,7 +408,7 @@ impl<'a> ColumnarData<'a> {
 
     fn build_columnar_iter_impl_iter(&self, mutable: bool) -> quote::Tokens {
         let names: Vec<_> = self.fields.iter().map(|f| f.ident.clone().unwrap()).collect();
-        // This is...ugly
+        // This is...ugly. quote! seems to consume the thing and Ident doesn't implement Copy.
         let names2 = names.clone();
         let names3 = names.clone();
         let names4 = names.clone();
@@ -380,11 +420,13 @@ impl<'a> ColumnarData<'a> {
             (&self.type_iter, &self.type_ref, Ident::new(""))
         };
 
+        let (impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
+
         let modifier_iter = ::std::iter::repeat(modifier.clone());
 
         quote! {
-            impl<'a> Iterator for #type_iter<'a> {
-                type Item = #type_ref<'a>;
+            impl #impl_generics Iterator for #type_iter #ty_generics #where_clause {
+                type Item = #type_ref #ty_generics;
 
                 fn next<'b>(&'b mut self) -> Option<Self::Item> {
                     #(
@@ -413,13 +455,17 @@ impl<'a> ColumnarData<'a> {
         let ref type_columnar = self.type_columnar;
         let ref type_iter = self.type_iter;
         let ref type_iter_mut = self.type_iter_mut;
+
+        let (lt_impl_generics, lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+        let lifetime = Ident::from(COLUMNAR_LIFETIME);
         quote! {
-            impl<'a> ::columnar::Columnar<'a> for #type_name {
-                type Ref = #type_ref_name<'a>;
-                type RefMut = #type_ref_name<'a>;
-                type Columnar = #type_columnar;
-                type Iter = #type_iter<'a>;
-                type IterMut = #type_iter_mut<'a>;
+            impl #lt_impl_generics ::columnar::Columnar<#lifetime> for #type_name #ty_generics #lt_where_clause {
+                type Ref = #type_ref_name #lt_ty_generics;
+                type RefMut = #type_ref_mut_name #lt_ty_generics;
+                type Columnar = #type_columnar #ty_generics;
+                type Iter = #type_iter #lt_ty_generics;
+                type IterMut = #type_iter_mut #lt_ty_generics;
             }
         }
     }
