@@ -7,8 +7,14 @@ authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
 [[example]]
 name = "columnar"
 
+[features]
+
+default = [ ]
+
+verbose = [ "columnar_derive/verbose" ]
+
 [dependencies]
-columnar_derive = { path = "columnar_derive", features = [ "verbose" ] }
+columnar_derive = { path = "columnar_derive" }
 
 [profile.release]
 debug = true
