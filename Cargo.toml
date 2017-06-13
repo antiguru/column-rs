@@ -6,18 +6,21 @@ authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
 
 [[example]]
 name = "columnar"
+required-features = [ "verbose" ]
 
 [features]
-
+# No features enabled
 default = [ ]
-
+# Re-expose columnar_derive/verbose as verbose
 verbose = [ "columnar_derive/verbose" ]
 
 [dependencies]
 columnar_derive = { path = "columnar_derive" }
 
 [profile.release]
+# Include debug info in release targets
 debug = true
 
 [profile.bench]
+# Include debug info in bench targets
 debug = true
