@@ -55,6 +55,7 @@ fn print_generated_code(result_string: String, ast: &syn::MacroInput, source: St
         if file_name == "stdin" {
             let text = text.to_string();
             let mut file = File::create(format!("target/derive_columnar_{}.rs", ast.ident.as_ref())).expect("Failed to open file");
+            file.write_all(format!("// AST: {:?}\n", ast).as_bytes())?;
             file.write_all(b"extern crate columnar;\n")?;
             file.write_all(source.as_bytes())?;
             file.write_all(b"\n")?;
