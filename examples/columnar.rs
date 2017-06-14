@@ -14,7 +14,8 @@ struct DataGen<A: Copy> {
 }
 
 fn main() {
-    let mut u = DataColumnar::new();
+
+    let mut u = <Data as Columnar>::Container::new();
 
     let ds = vec![Data { id: 0, val: 3.141 }, Data { id: 1, val: 42.}];
     u.extend(ds);

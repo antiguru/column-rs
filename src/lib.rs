@@ -15,11 +15,23 @@ pub trait Columnar<'a> {
     type RefMut;
 
     /// The columnar container.
-    type Columnar;
+    type Container: Container<'a>;
 
     /// An iterator over elements in the columnar container.
     type Iter;
 
     /// A mutable iterator over elements in the columnar container.
     type IterMut;
+
+}
+
+pub trait Container<'a> {
+
+    type Columnar: Columnar<'a>;
+
+    fn new() -> Self;
+    fn with_capacity(capacity: usize) -> Self;
+    fn iter(&'a self) -> <Self::Columnar as Columnar>::Iter;
+    fn iter_mut(&'a mut self) -> <Self::Columnar as Columnar>::IterMut;
+
 }
