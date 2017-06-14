@@ -1,6 +1,8 @@
 extern crate columnar;
 #[macro_use] extern crate columnar_derive;
 
+use columnar::{Columnar, Container};
+
 #[derive(Columnar, Debug)]
 struct Data {
     id: usize,
@@ -8,7 +10,7 @@ struct Data {
 }
 
 #[derive(Columnar, Debug)]
-struct DataGen<A: Copy> {
+pub struct DataGen<A: Copy> {
     id: A,
     val: f64,
 }
@@ -30,7 +32,7 @@ fn main() {
         println!("Element: {:?}", e);
     }
 
-    let mut g = DataGenColumnar::new();
+    let mut g = <DataGen<&str> as Columnar>::Container::new();
     g.extend(vec![DataGen {id: "A", val: 1.}]);
     for e in g.iter() {
         println!("Element: {:?}", e);
