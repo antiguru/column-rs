@@ -193,10 +193,11 @@ impl<'a> ColumnarData<'a> {
             f
         }).collect();
         let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
+        let ref vis = self.ast.vis;
         quote! {
             #[derive(Debug)]
             #[allow(dead_code)]
-            pub struct #name #ty_generics #where_clause {
+            #vis struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
@@ -213,9 +214,11 @@ impl<'a> ColumnarData<'a> {
             f
         }).collect();
         let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
+        let ref vis = self.ast.vis;
         quote! {
+            #[derive(Debug)]
             #[allow(dead_code)]
-            pub struct #name #ty_generics #where_clause {
+            #vis struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
@@ -238,9 +241,11 @@ impl<'a> ColumnarData<'a> {
             f
         }).collect();
         let (_impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+        let ref vis = self.ast.vis;
         quote! {
+            #[derive(Debug)]
             #[allow(dead_code)]
-            pub struct #name #ty_generics #where_clause {
+            #vis struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
@@ -265,9 +270,11 @@ impl<'a> ColumnarData<'a> {
             f
         }).collect();
         let (_impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
+        let ref vis = self.ast.vis;
         quote! {
+            #[derive(Debug)]
             #[allow(dead_code)]
-            pub struct #name #ty_generics #where_clause {
+            #vis struct #name #ty_generics #where_clause {
                 #(#ref_type_fields),*
             }
         }
