@@ -281,7 +281,7 @@ impl<'a> ColumnarData<'a> {
     }
 
     fn build_container_impl(&self) -> quote::Tokens {
-        let ref name = self.type_container;
+        let ref type_continer = self.type_container;
         let ref type_columnar = self.ast.ident;
 
         let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
@@ -294,7 +294,7 @@ impl<'a> ColumnarData<'a> {
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
 
         quote! {
-            impl#lt_impl_generics ::columnar::Container<#lifetime> for #name #ty_generics #lt_where_clause {
+            impl#lt_impl_generics ::columnar::Container<#lifetime, #type_columnar#ty_generics> for #type_continer #ty_generics #lt_where_clause {
 
                 type Columnar = #type_columnar#ty_generics;
 

@@ -2,6 +2,7 @@
 
 extern crate test;
 extern crate columnar;
+use columnar::Container;
 #[macro_use] extern crate columnar_derive;
 
 use std::mem::size_of;
@@ -20,7 +21,7 @@ fn data_columnar(b: &mut test::Bencher) {
     for i in 0..size {
         a.push(Data { id: i, val: 15., ..Data::default()});
     }
-    let mut dc = DataColumnar::with_capacity(size);
+    let mut dc = DataContainer::with_capacity(size);
     dc.extend(a);
     b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
@@ -41,9 +42,9 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
         b.push(Data { id: i + size, val: size as f64 + i as f64 * 0.6, ..Data::default()});
         r.push(Data { id: 0, val: 1., ..Data::default()});
     }
-    let mut ca = DataColumnar::with_capacity(size);
-    let mut cb = DataColumnar::with_capacity(size);
-    let mut cr = DataColumnar::with_capacity(size);
+    let mut ca = DataContainer::with_capacity(size);
+    let mut cb = DataContainer::with_capacity(size);
+    let mut cr = DataContainer::with_capacity(size);
     ca.extend(a);
     cb.extend(b);
     test::black_box(r.first().unwrap().dummy);
