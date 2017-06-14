@@ -6,7 +6,6 @@ authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
 
 [[example]]
 name = "columnar"
-required-features = [ "verbose" ]
 
 [features]
 # No features enabled
