@@ -131,7 +131,7 @@ impl<'a> ColumnarData<'a> {
         }
     }
 
-    pub fn columnar_struct(&self) -> quote::Tokens {
+    fn columnar_struct(&self) -> quote::Tokens {
         self.new_columnar_struct_impl()
     }
 
@@ -281,9 +281,12 @@ impl<'a> ColumnarData<'a> {
     }
 
     fn build_container_impl(&self) -> quote::Tokens {
-        let ref name = self.type_columnar;
+        let ref name = self.type_container;
+        let ref type_columnar = self.ast.ident;
 
-        let (impl_generics, ty_generics, where_clause) = self.ast.generics.split_for_impl();
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+        let (lt_impl_generics, _lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
+        let lifetime = syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
 
         let new = self.build_columnar_new_impl();
         let with_capacity = self.build_columnar_with_capacity_impl();
@@ -291,7 +294,10 @@ impl<'a> ColumnarData<'a> {
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
 
         quote! {
-            impl#impl_generics #name #ty_generics #where_clause {
+            impl#lt_impl_generics ::columnar::Container<#lifetime> for #name #ty_generics #lt_where_clause {
+
+                type Columnar = #type_columnar#ty_generics;
+
                 #new
 
                 #with_capacity
@@ -309,7 +315,7 @@ impl<'a> ColumnarData<'a> {
         let ref name = self.type_container;
 
         quote! {
-            pub fn new() -> Self {
+            fn new() -> Self {
                 #name {
                     #(#names: Vec::new()),*
                 }
@@ -323,7 +329,7 @@ impl<'a> ColumnarData<'a> {
         let ref name = self.type_container;
 
         quote! {
-            pub fn with_capacity(capacity: usize) -> Self {
+            fn with_capacity(capacity: usize) -> Self {
                 #name {
                     #(#names: Vec::with_capacity(capacity)),*
                 }
@@ -340,7 +346,7 @@ impl<'a> ColumnarData<'a> {
         let iter = ::std::iter::repeat(iter);
         let modifier = Ident::new(modifier);
         quote! {
-            pub fn #fn_name(& #modifier self) -> #type_name #ty_generics {
+            fn #fn_name(& #modifier self) -> #type_name #ty_generics {
                 #type_name {
                     #(#iters: self.#names.#iter()),*
                 }
@@ -359,7 +365,7 @@ impl<'a> ColumnarData<'a> {
         let (lt_impl_generics, _lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
 
         quote! {
-            impl #lt_impl_generics Extend<#name#ty_generics> for #type_columnar #ty_generics #lt_where_clause {
+            impl #lt_impl_generics Extend<#name#ty_generics> for #type_container #ty_generics #lt_where_clause {
                 fn extend<T: IntoIterator<Item=#name#ty_generics>>(&mut self, iter: T) {
                     for element in iter {
                         #(self.#names.push(element.#names2));*
@@ -384,7 +390,7 @@ impl<'a> ColumnarData<'a> {
         };
         let lifetime = Ident::from(COLUMNAR_LIFETIME);
         quote! {
-            impl#lt_impl_generics IntoIterator for &#lifetime #mut_modifier #type_columnar #ty_generics #where_clause{
+            impl#lt_impl_generics IntoIterator for &#lifetime #mut_modifier #type_container #ty_generics #where_clause{
                 type Item = #item#lt_ty_generics;
                 type IntoIter = #iter#lt_ty_generics;
                 fn into_iter(self) -> Self::IntoIter {
