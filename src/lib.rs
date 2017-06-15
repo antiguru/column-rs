@@ -30,9 +30,7 @@ pub trait Container<'a, A: Columnar<'a>> {
 
     type Columnar: Columnar<'a>;
 
-    fn new() -> Self;
-    fn with_capacity(capacity: usize) -> Self;
     fn iter(&'a self) -> A::Iter;
-    fn iter_mut(&'a mut self) -> A::IterMut;
-
+    // fn iter_mut(&'a mut self) -> A::IterMut;
+    fn len(&'a self) -> usize;
 }

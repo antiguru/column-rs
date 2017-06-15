@@ -292,17 +292,24 @@ impl<'a> ColumnarData<'a> {
         let with_capacity = self.build_columnar_with_capacity_impl();
         let iter = self.build_columnar_iter_impl(&self.type_iter, "iter", "", &ty_generics);
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
+        let len = self.build_columnar_len_impl();
 
         quote! {
             impl#lt_impl_generics ::columnar::Container<#lifetime, #type_columnar#ty_generics> for #type_continer #ty_generics #lt_where_clause {
 
                 type Columnar = #type_columnar#ty_generics;
 
+                #iter
+
+                #len
+            }
+
+            #[allow(dead_code)]
+            impl#lt_impl_generics #type_continer #ty_generics #lt_where_clause {
+
                 #new
 
                 #with_capacity
-
-                #iter
 
                 #iter_mut
             }
@@ -350,6 +357,19 @@ impl<'a> ColumnarData<'a> {
                 #type_name {
                     #(#iters: self.#names.#iter()),*
                 }
+            }
+        }
+    }
+
+    fn build_columnar_len_impl(&self) -> quote::Tokens {
+        let name = if let Some(name) = self.fields.first().expect("At least one field required").clone().ident {
+            name
+        } else {
+            syn::Ident::new("0")
+        };
+        quote! {
+            fn len(&self) -> usize {
+                self.#name.len()
             }
         }
     }
