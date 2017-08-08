@@ -15,22 +15,64 @@ pub trait Columnar<'a>: Sized {
     /// only changed to mutable references.
     type RefMut;
 
-    /// The columnar container.
-    type Container: Container<'a, Self>;
-
     /// An iterator over elements in the columnar container.
     type Iter: ::std::iter::Iterator;
 
     /// A mutable iterator over elements in the columnar container.
     type IterMut: ::std::iter::Iterator;
 
+    fn iter(&'a self) -> Self::Iter;
+
+    fn iter_mut(&'a mut self) -> Self::IterMut;
+
+    fn len(&'a self) -> usize;
 }
 
-pub trait Container<'a, A: Columnar<'a>> {
+/// Trait to construct a `Columnar` collection for an output type. An implementation is generated.
+/// # Example
+///
+/// ```
+/// # #[macro_use] extern crate columnar_derive;
+/// # extern crate columnar;
+/// # use columnar::{Columnar, ColumnarFactory};
+/// #[derive(Columnar)]
+/// struct Data {x: usize}
+/// # fn main() {
+/// let columnar = <Data as ColumnarFactory>::new();
+/// # }
+/// ```
+pub trait ColumnarFactory<'a> {
 
-    type Columnar: Columnar<'a>;
+    /// The type representing the wrapped data in a columnar data layout.
+    type Output: Columnar<'a>;
 
-    fn iter(&'a self) -> A::Iter;
-    // fn iter_mut(&'a mut self) -> A::IterMut;
-    fn len(&'a self) -> usize;
+    /// Construct a new `Columar` with default capacity.
+    /// # Example
+    ///
+    /// ```
+    /// # #[macro_use] extern crate columnar_derive;
+    /// # extern crate columnar;
+    /// # use columnar::{Columnar, ColumnarFactory};
+    /// #[derive(Columnar)]
+    /// struct Data {x: usize}
+    /// # fn main() {
+    /// let columnar = <Data as ColumnarFactory>::new();
+    /// # }
+    /// ```
+    fn new() -> Self::Output;
+
+    /// Construct a new `Columar` with the provided capacity.
+    /// # Example
+    ///
+    /// ```
+    /// # #[macro_use] extern crate columnar_derive;
+    /// # extern crate columnar;
+    /// # use columnar::{Columnar, ColumnarFactory};
+    /// #[derive(Columnar)]
+    /// struct Data {x: usize}
+    /// # fn main() {
+    /// let columnar = <Data as ColumnarFactory>::with_capacity(200);
+    /// # }
+    /// ```
+    fn with_capacity(len: usize) -> Self::Output;
 }

@@ -1,8 +1,6 @@
 
 
-use std::marker::PhantomData;
-
-use super::{Columnar, Container};
+use super::Columnar;
 
 pub struct ColumnarBitmapIterator<'a, A: Columnar<'a>> {
     iter_wrapped: A::Iter,
@@ -10,40 +8,45 @@ pub struct ColumnarBitmapIterator<'a, A: Columnar<'a>> {
 }
 
 #[derive(Debug)]
-pub struct ColumnarBitmapContainer<'a, A: Columnar<'a>, C: Container<'a, A>> where C: 'a {
+pub struct ColumnarBitmapContainer<'a, A: Columnar<'a>> where A: 'a {
     // Test ref or Rc
-    wrapped: &'a C,
+    wrapped: &'a A,
     bitmap: Vec<bool>,
-    valid_items: usize,
-    phantom: PhantomData<(A, &'a C)>,
+    valid_items: usize
 }
 
-struct ColumnarBitmap<'a, A, C> where A: 'a {
-    phantom: PhantomData<(&'a A, C)>,
-}
-
-impl<'a, A, C> Columnar<'a> for ColumnarBitmap<'a, A, C>
-    where A: Columnar<'a>,
-          C: Container<'a, A> + 'a,
+impl<'a, A> Columnar<'a> for ColumnarBitmapContainer<'a, A>
+    where A: Columnar<'a>
 {
     type Ref = A::Ref;
     type RefMut = A::RefMut;
-    type Container = ColumnarBitmapContainer<'a, A, C>;
     type Iter = ColumnarBitmapIterator<'a, A>;
     type IterMut = ::std::slice::Iter<'a, ()>;
+
+    fn iter(&'a self) -> ColumnarBitmapIterator<'a, A> {
+        ColumnarBitmapIterator {
+            iter_wrapped: self.wrapped.iter(),
+            iter_bitmap: self.bitmap.iter(),
+        }
+    }
+
+    fn iter_mut(&'a mut self) -> Self::IterMut {
+        panic!("Not yet implemented")
+    }
+
+    fn len(&'a self) -> usize {
+        self.valid_items
+    }
 }
 
-impl<'a, A, C> ColumnarBitmapContainer<'a, A, C>
-    where C: Container<'a, A> + 'a,
-          A: Columnar<'a> + 'a,
-          <C as Container<'a, A>>::Columnar: 'a,
+impl<'a, A> ColumnarBitmapContainer<'a, A>
+    where A: Columnar<'a> + 'a
 {
-    pub fn new(wrapped: &'a C) -> Self {
+    pub fn new(wrapped: &'a A) -> Self {
         Self {
             wrapped,
             bitmap: vec![true; wrapped.len()],
             valid_items: wrapped.len(),
-            phantom: PhantomData,
         }
     }
 
@@ -61,25 +64,6 @@ impl<'a, A, C> ColumnarBitmapContainer<'a, A, C>
     }
 
 }
-
-impl<'a, A, C> Container<'a, ColumnarBitmap<'a, A, C>> for ColumnarBitmapContainer<'a, A, C>
-    where C: Container<'a, A> + 'a,
-          A: Columnar<'a> + 'a,
-          <C as Container<'a, A>>::Columnar: 'a,
-{
-    type Columnar = ColumnarBitmap<'a, A, C>;
-    fn iter(&'a self) -> ColumnarBitmapIterator<'a, A> {
-        ColumnarBitmapIterator {
-            iter_wrapped: self.wrapped.iter(),
-            iter_bitmap: self.bitmap.iter(),
-        }
-    }
-
-    fn len(&'a self) -> usize {
-        self.valid_items
-    }
-}
-
 // impl<'a, A, C> Extend<A> for ColumnarBitmapContainer<'a, A, C>
 //     where C: Container<'a, A> + Extend<A> + 'a,
 //           A: Columnar<'a> + 'a,
@@ -89,9 +73,8 @@ impl<'a, A, C> Container<'a, ColumnarBitmap<'a, A, C>> for ColumnarBitmapContain
 //     }
 // }
 
-impl<'a, A, C> IntoIterator for &'a ColumnarBitmapContainer<'a, A, C>
-    where C: Container<'a, A> + 'a,
-          A: Columnar<'a> + 'a,
+impl<'a, A> IntoIterator for &'a ColumnarBitmapContainer<'a, A>
+    where A: Columnar<'a> + 'a,
           A::Iter: ::std::iter::Iterator,
 {
     type Item = <A::Iter as ::std::iter::Iterator>::Item;

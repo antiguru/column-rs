@@ -56,7 +56,7 @@ fn print_generated_code(result_string: String, ast: &syn::MacroInput, source: St
             let text = text.to_string();
             let mut file = File::create(format!("target/derive_columnar_{}.rs", ast.ident.as_ref())).expect("Failed to open file");
             file.write_all(format!("// AST: {:?}\n", ast).as_bytes())?;
-            file.write_all(b"extern crate columnar;\n")?;
+            file.write_all(b"extern crate columnar;\nuse columnar::Columnar;\n")?;
             file.write_all(source.as_bytes())?;
             file.write_all(b"\n")?;
             file.write_all(text.as_bytes())?;
@@ -93,7 +93,7 @@ impl<'a> ColumnarData<'a> {
         };
         let type_ref: Ident = Ident::from(format!("{}Ref", ast.ident));
         let type_ref_mut: Ident = Ident::from(format!("{}RefMut", ast.ident));
-        let type_container: Ident = Ident::from(format!("{}Container", ast.ident));
+        let type_container: Ident = Ident::from(format!("{}Columnar", ast.ident));
         let type_iter: Ident = Ident::from(format!("{}ColumnarIterator", ast.ident));
         let type_iter_mut: Ident = Ident::from(format!("{}ColumnarIteratorMut", ast.ident));
 
@@ -150,8 +150,8 @@ impl<'a> ColumnarData<'a> {
         let ref_mut_impl = self.build_ref_impl(&self.type_ref_mut);
         let columnar_iter_impl = self.build_columnar_iter_impl_iter(false);
         let columnar_iter_mut_impl = self.build_columnar_iter_impl_iter(true);
-        let columnar_trait_impl = self.build_columnar_trait_impl();
         quote! {
+
             #ref_tokens
 
             #ref_mut_tokens
@@ -177,8 +177,6 @@ impl<'a> ColumnarData<'a> {
             #columnar_iter_impl
 
             #columnar_iter_mut_impl
-
-            #columnar_trait_impl
         }
     }
 
@@ -285,7 +283,7 @@ impl<'a> ColumnarData<'a> {
         let ref type_columnar = self.ast.ident;
 
         let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
-        let (lt_impl_generics, _lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
+        let (lt_impl_generics, lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
         let lifetime = syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
 
         let new = self.build_columnar_new_impl();
@@ -294,24 +292,33 @@ impl<'a> ColumnarData<'a> {
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
         let len = self.build_columnar_len_impl();
 
-        quote! {
-            impl#lt_impl_generics ::columnar::Container<#lifetime, #type_columnar#ty_generics> for #type_continer #ty_generics #lt_where_clause {
+        let ref type_ref_name = self.type_ref;
+        let ref type_ref_mut_name = self.type_ref_mut;
+        let ref type_container = self.type_container;
+        let ref type_iter = self.type_iter;
+        let ref type_iter_mut = self.type_iter_mut;
 
-                type Columnar = #type_columnar#ty_generics;
+        quote! {
+            impl#lt_impl_generics ::columnar::Columnar<#lifetime> for #type_continer #ty_generics #lt_where_clause {
+
+                type Ref = #type_ref_name #lt_ty_generics;
+                type RefMut = #type_ref_mut_name #lt_ty_generics;
+                type Iter = #type_iter #lt_ty_generics;
+                type IterMut = #type_iter_mut #lt_ty_generics;
 
                 #iter
-
+                #iter_mut
                 #len
             }
 
             #[allow(dead_code)]
-            impl#lt_impl_generics #type_continer #ty_generics #lt_where_clause {
+            impl#lt_impl_generics ::columnar::ColumnarFactory<#lifetime> for #type_columnar #ty_generics #lt_where_clause {
+                type Output = #type_container #ty_generics;
 
                 #new
 
                 #with_capacity
 
-                #iter_mut
             }
         }
     }
@@ -322,7 +329,7 @@ impl<'a> ColumnarData<'a> {
         let ref name = self.type_container;
 
         quote! {
-            fn new() -> Self {
+            fn new() -> Self::Output {
                 #name {
                     #(#names: Vec::new()),*
                 }
@@ -336,7 +343,7 @@ impl<'a> ColumnarData<'a> {
         let ref name = self.type_container;
 
         quote! {
-            fn with_capacity(capacity: usize) -> Self {
+            fn with_capacity(capacity: usize) -> Self::Output {
                 #name {
                     #(#names: Vec::with_capacity(capacity)),*
                 }
@@ -478,28 +485,6 @@ impl<'a> ColumnarData<'a> {
                         #(#names3),*
                     })
                 }
-            }
-        }
-    }
-
-    fn build_columnar_trait_impl(&self) -> quote::Tokens {
-        let ref type_name = self.ast.ident;
-        let ref type_ref_name = self.type_ref;
-        let ref type_ref_mut_name = self.type_ref_mut;
-        let ref type_container = self.type_container;
-        let ref type_iter = self.type_iter;
-        let ref type_iter_mut = self.type_iter_mut;
-
-        let (lt_impl_generics, lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
-        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
-        let lifetime = Ident::from(COLUMNAR_LIFETIME);
-        quote! {
-            impl #lt_impl_generics ::columnar::Columnar<#lifetime> for #type_name #ty_generics #lt_where_clause {
-                type Ref = #type_ref_name #lt_ty_generics;
-                type RefMut = #type_ref_mut_name #lt_ty_generics;
-                type Container = #type_container #ty_generics;
-                type Iter = #type_iter #lt_ty_generics;
-                type IterMut = #type_iter_mut #lt_ty_generics;
             }
         }
     }
