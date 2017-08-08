@@ -86,6 +86,13 @@ enable verbose output:
 columnar = { git = "https://github.com/antiguru/columnar-rs.git", features = [ "verbose" ] }
 ```
 
+The feature can also be activated on the command line when working on this project. The
+following `cargo` invocation tests and dumps the intermediate files:
+
+```
+cargo test --features verbose
+```
+
 # Performance
 
 There's a small benchmark. It shows that the columnar format can be substantially faster for

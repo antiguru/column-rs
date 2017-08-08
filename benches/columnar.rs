@@ -8,13 +8,15 @@ use columnar::bitmap::ColumnarBitmapContainer;
 
 use std::mem::size_of;
 
+// The data for the benchmark, consiting of 8x64b=512b which is a cache line on most architectures
 #[derive(Columnar, Debug, Default)]
 struct Data {
     id: usize,
     val: f64,
-    dummy: [usize; 30],
+    dummy: [usize; 6],
 }
 
+/// Perform assign operation on columnar type, input=output
 #[bench]
 fn data_columnar(b: &mut test::Bencher) {
     let size = 1 << 20;
@@ -32,6 +34,7 @@ fn data_columnar(b: &mut test::Bencher) {
     })
 }
 
+/// Perform add/assign operation on row type with three inputs, one output
 #[bench]
 fn data_columnar_add_assign(bench: &mut test::Bencher) {
     let size = 1 << 20;
@@ -59,6 +62,7 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
     })
 }
 
+/// Perform assign operation on row type, input=output
 #[bench]
 fn data_row_add_assign(bench: &mut test::Bencher) {
     let size = 1 << 20;
@@ -80,6 +84,7 @@ fn data_row_add_assign(bench: &mut test::Bencher) {
     })
 }
 
+/// Perform assign operation on row type, input=output
 #[bench]
 fn data_row(b: &mut test::Bencher) {
     let size = 1 << 20;
@@ -95,6 +100,7 @@ fn data_row(b: &mut test::Bencher) {
     })
 }
 
+/// Perform add/assign operation on columnar type with three inputs, one output
 #[bench]
 fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
     let size = 1 << (20 + 1);
