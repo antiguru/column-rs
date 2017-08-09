@@ -18,7 +18,7 @@ pub mod bitmap;
 /// let columnar = <Data as Columnar>::new();
 /// # }
 /// ```
-pub trait Columnar<'a>: Sized {
+pub trait Columnar<'a> {
 
     /// The type representing the wrapped data in a columnar data layout.
     type Output;
