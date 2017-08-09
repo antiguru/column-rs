@@ -2,7 +2,7 @@
 #[macro_use] extern crate columnar_derive;
 extern crate columnar;
 use columnar::bitmap::*;
-use columnar::{Columnar, ColumnarFactory};
+use columnar::Columnar;
 
 #[derive(Eq, PartialEq, Debug, Clone, Columnar)]
 pub struct Useless {
@@ -14,9 +14,9 @@ pub struct Useless {
 fn test() {
     let u = vec![Useless { a: 1, b: None}, Useless { a: 1, b: Some(-1)}];
     let original = u.clone();
-    let mut columnar = <Useless as ColumnarFactory>::with_capacity(u.len());
+    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
     columnar.extend(u.into_iter());
-    let mut bitmap_container = ColumnarBitmapContainer::new(&columnar);
+    let mut bitmap_container = FilteredCollection::new(&columnar, columnar.len());
     let result: Vec<_> = columnar.iter().map(|e| UselessRef::to_owned(&e)).collect();
     assert_eq!(original, result);
     assert_eq!(columnar.len(), original.len());
@@ -38,12 +38,12 @@ fn test() {
 fn test_mul_2() {
     let u = vec![Useless { a: 1, b: None}, Useless { a: 1, b: Some(-1)}];
     let mut original = u.clone();
-    for e in original.iter_mut() {
+    for e in &mut original {
         e.a *= 2;
     }
-    let mut columnar = <Useless as ColumnarFactory>::with_capacity(u.len());
+    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
     columnar.extend(u.into_iter());
-    for e in columnar.iter_mut() {
+    for e in &mut columnar {
         *e.a *= 2;
     }
     let result: Vec<_> = columnar.iter().map(|e| UselessRef::to_owned(&e)).collect();
@@ -57,9 +57,9 @@ fn test_retain() {
     for a in 0..size {
         u.push(Useless {a, b: None });
     }
-    let mut columnar = <Useless as ColumnarFactory>::with_capacity(u.len());
+    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
     columnar.extend(u.into_iter());
-    let mut bitmap_container = ColumnarBitmapContainer::new(&columnar);
+    let mut bitmap_container = FilteredCollection::new(&columnar, columnar.len());
     bitmap_container.retain(|u| u.a & 1 == 0);
     println!("bitmap_container: {:?}", bitmap_container);
     assert_eq!(bitmap_container.len(), size as usize / 2);

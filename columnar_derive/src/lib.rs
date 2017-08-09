@@ -32,21 +32,21 @@ pub fn derive_columnar(input: TokenStream) -> TokenStream {
 
     let result_string = result.to_string();
     if cfg!(feature = "verbose") {
-        match print_generated_code(result_string, &ast, source) {
+        match print_generated_code(&result_string, &ast, source) {
             Err(reason) => panic!(reason),
             Ok(_) => {},
         }
     }
-    result.to_string().parse().unwrap()
+    result_string.parse().unwrap()
 }
 
 #[cfg(feature = "verbose")]
-fn print_generated_code(result_string: String, ast: &syn::MacroInput, source: String) -> ::std::io::Result<()> {
+fn print_generated_code(result_string: &String, ast: &syn::MacroInput, source: String) -> ::std::io::Result<()> {
     use std::fs::File;
     use std::io::prelude::Write;
 
     // Use rustfmt for pretty-printing
-    let input = rustfmt::Input::Text(result_string);
+    let input = rustfmt::Input::Text(result_string.clone());
     let config = rustfmt::config::Config::default();
     let (error_summary, file_map, _report) = rustfmt::format_input::<std::io::Stdout>(input, &config, None)
         .unwrap();
@@ -67,7 +67,7 @@ fn print_generated_code(result_string: String, ast: &syn::MacroInput, source: St
 }
 
 #[cfg(not(feature = "verbose"))]
-fn print_generated_code(_result_string: String, _ast: &syn::MacroInput, _source: String) -> ::std::io::Result<()> {
+fn print_generated_code(_result_string: &String, _ast: &syn::MacroInput, _source: String) -> ::std::io::Result<()> {
     Ok(())
 }
 struct ColumnarData<'a> {
@@ -283,7 +283,7 @@ impl<'a> ColumnarData<'a> {
         let ref type_columnar = self.ast.ident;
 
         let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
-        let (lt_impl_generics, lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
+        let (lt_impl_generics, _lt_ty_generics, lt_where_clause) = self.lt_generics.split_for_impl();
         let lifetime = syn::Lifetime { ident: Ident::from(COLUMNAR_LIFETIME) };
 
         let new = self.build_columnar_new_impl();
@@ -292,19 +292,11 @@ impl<'a> ColumnarData<'a> {
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
         let len = self.build_columnar_len_impl();
 
-        let ref type_ref_name = self.type_ref;
-        let ref type_ref_mut_name = self.type_ref_mut;
         let ref type_container = self.type_container;
-        let ref type_iter = self.type_iter;
-        let ref type_iter_mut = self.type_iter_mut;
 
         quote! {
-            impl#lt_impl_generics ::columnar::Columnar<#lifetime> for #type_continer #ty_generics #lt_where_clause {
-
-                type Ref = #type_ref_name #lt_ty_generics;
-                type RefMut = #type_ref_mut_name #lt_ty_generics;
-                type Iter = #type_iter #lt_ty_generics;
-                type IterMut = #type_iter_mut #lt_ty_generics;
+            #[allow(dead_code)]
+            impl#lt_impl_generics #type_continer #ty_generics #lt_where_clause {
 
                 #iter
                 #iter_mut
@@ -312,7 +304,7 @@ impl<'a> ColumnarData<'a> {
             }
 
             #[allow(dead_code)]
-            impl#lt_impl_generics ::columnar::ColumnarFactory<#lifetime> for #type_columnar #ty_generics #lt_where_clause {
+            impl#lt_impl_generics ::columnar::Columnar<#lifetime> for #type_columnar #ty_generics #lt_where_clause {
                 type Output = #type_container #ty_generics;
 
                 #new
