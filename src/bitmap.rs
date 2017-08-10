@@ -46,6 +46,10 @@ impl<'a, A> FilteredCollection<'a, A>
         self.valid_items
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.valid_items == 0
+    }
+
     pub fn retain<F>(&mut self, mut f: F) 
         where F: FnMut(&<&'a A as IntoIterator>::Item) -> bool,
     {
