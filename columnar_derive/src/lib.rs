@@ -291,6 +291,7 @@ impl<'a> ColumnarData<'a> {
         let iter = self.build_columnar_iter_impl(&self.type_iter, "iter", "", &ty_generics);
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
         let len = self.build_columnar_len_impl();
+        let is_empty = self.build_columnar_is_empty_impl();
 
         let ref type_container = self.type_container;
 
@@ -301,6 +302,7 @@ impl<'a> ColumnarData<'a> {
                 #iter
                 #iter_mut
                 #len
+                #is_empty
             }
 
             #[allow(dead_code)]
@@ -369,6 +371,19 @@ impl<'a> ColumnarData<'a> {
         quote! {
             fn len(&self) -> usize {
                 self.#name.len()
+            }
+        }
+    }
+
+    fn build_columnar_is_empty_impl(&self) -> quote::Tokens {
+        let name = if let Some(name) = self.fields.first().expect("At least one field required").clone().ident {
+            name
+        } else {
+            syn::Ident::new("0")
+        };
+        quote! {
+            fn is_empty(&self) -> bool {
+                self.#name.is_empty()
             }
         }
     }
