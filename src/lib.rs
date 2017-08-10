@@ -2,6 +2,7 @@
 //! in a columnar memory layout.
 
 pub mod bitmap;
+pub mod tuple;
 
 /// Trait describing associated and generated types for a type
 /// that can be represented in a columnar layout
