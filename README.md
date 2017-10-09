@@ -10,7 +10,7 @@ of a type's fields.
 To use `columnar`, add the following dependency to your project's
 `Cargo.toml`:
 
-```
+```toml
 [dependencies]
 columnar = { git = "https://github.com/antiguru/columnar-rs.git" }
 ```
@@ -18,7 +18,7 @@ columnar = { git = "https://github.com/antiguru/columnar-rs.git" }
 This will bring in the `columnar` crate from Github (this will hopefully change!),
 which should allow you to use regular structs in a column-based memory layout.
 
-```
+```rust
 extern crate columnar;
 #[macro_use] extern crate columnar_derive;
 
@@ -65,7 +65,7 @@ That means that the value has to implement the `Copy` trait for this to work. Ot
 Rust will complain about it. For example, this will produce a working generic columnar
 type:
 
-```
+```rust
 #[derive(Columnar)]
 struct DataGen<A: Copy> {
     id: A,
@@ -81,7 +81,7 @@ exists. It forces `columnar` to write the intermediate code to the target direct
 please open an issue or send a pull request!) Insert the following snippet in `Cargo.toml` to
 enable verbose output:
 
-```
+```toml
 [dependencies]
 columnar = { git = "https://github.com/antiguru/columnar-rs.git", features = [ "verbose" ] }
 ```
