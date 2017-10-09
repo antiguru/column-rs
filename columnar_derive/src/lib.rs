@@ -462,15 +462,13 @@ impl<'a> ColumnarData<'a> {
         let names4 = names.clone();
         let names5 = names.clone();
         let iters: Vec<_> = self.fields.iter().map(|f| Ident::new(format!("iter_{}", f.ident.clone().unwrap()))).collect();
-        let (type_iter, type_ref, modifier) = if mutable {
-            (&self.type_iter_mut, &self.type_ref_mut, Ident::new("mut"))
+        let (type_iter, type_ref) = if mutable {
+            (&self.type_iter_mut, &self.type_ref_mut)
         } else {
-            (&self.type_iter, &self.type_ref, Ident::new(""))
+            (&self.type_iter, &self.type_ref)
         };
 
         let (impl_generics, ty_generics, where_clause) = self.lt_generics.split_for_impl();
-
-        let modifier_iter = ::std::iter::repeat(modifier.clone());
 
         quote! {
             impl #impl_generics Iterator for #type_iter #ty_generics #where_clause {
@@ -486,7 +484,7 @@ impl<'a> ColumnarData<'a> {
                         }
                     );*
                     #(
-                        let #modifier_iter #names4 = #names5.unwrap()
+                        let #names4 = #names5.unwrap()
                     );*;
                     Some(Self::Item {
                         #(#names3),*

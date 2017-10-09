@@ -1,7 +1,7 @@
 
 #[macro_use] extern crate columnar_derive;
 extern crate columnar;
-use columnar::bitmap::*;
+use columnar::bitmap::FilteredCollection;
 use columnar::Columnar;
 
 #[derive(Eq, PartialEq, Debug, Clone, Columnar)]
@@ -60,7 +60,7 @@ fn test_retain() {
     let mut columnar = <Useless as Columnar>::with_capacity(u.len());
     columnar.extend(u.into_iter());
     let mut bitmap_container = FilteredCollection::new(&columnar, columnar.len());
-    bitmap_container.retain(|u| u.a & 1 == 0);
+    bitmap_container.retain(|u| u.a.trailing_zeros() > 0);
     println!("bitmap_container: {:?}", bitmap_container);
     assert_eq!(bitmap_container.len(), size as usize / 2);
     let as_vec: Vec<Useless> = bitmap_container.iter().map(|x| x.to_owned()).collect();

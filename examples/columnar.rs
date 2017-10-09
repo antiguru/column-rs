@@ -25,7 +25,7 @@ fn main() {
     for e in u.iter() {
         println!("Element: {:?}", e);
     }
-    for mut e in u.iter_mut() {
+    for e in u.iter_mut() {
         *e.val *= 2.;
     }
     for e in u.iter() {

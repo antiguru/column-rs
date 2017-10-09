@@ -28,7 +28,7 @@ fn data_columnar(b: &mut test::Bencher) {
     dc.extend(a);
     b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
-        for mut e in dc.iter_mut() {
+        for e in dc.iter_mut() {
             *e.id *= 2;
         }
     })
@@ -56,7 +56,7 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
     bench.bytes = (size_of::<f64>() * size * 3) as u64;
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = ca.iter().zip(cb.iter()).zip(cr.iter_mut());
-        for ((ea, eb), mut er) in zip {
+        for ((ea, eb), er) in zip {
             *er.val /= ea.val + eb.val;
         };
     })
@@ -78,7 +78,7 @@ fn data_row_add_assign(bench: &mut test::Bencher) {
     bench.bytes = (size_of::<f64>() * size * 3) as u64;
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = a.iter().zip(b.iter()).zip(r.iter_mut());
-        for ((ea, eb), mut er) in zip {
+        for ((ea, eb), er) in zip {
             er.val /= ea.val + eb.val;
         };
     })
@@ -94,7 +94,7 @@ fn data_row(b: &mut test::Bencher) {
     }
     b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
-        for mut e in &mut a {
+        for e in &mut a {
             e.id *= 2;
         }
     })
@@ -124,7 +124,7 @@ fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
     bench.bytes = (size_of::<f64>() * size * 3 / 2) as u64;
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = bitmap_container.iter().zip(cb.iter()).zip(cr.iter_mut());
-        for ((ea, eb), mut er) in zip {
+        for ((ea, eb), er) in zip {
             *er.val /= ea.val + eb.val;
         };
     })

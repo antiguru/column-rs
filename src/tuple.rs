@@ -54,7 +54,7 @@ macro_rules! tuple_impls {
             }
             impl<'columnar, $($T),+> Iterator for Col<($(::std::slice::Iter<'columnar, $T>),+,)> {
                 type Item = ($(&'columnar $T),+,);
-                fn next<'b>(&'b mut self) -> Option<Self::Item> {
+                fn next(&mut self) -> Option<Self::Item> {
                     let t = ($(self.t.$idx.next()),+,);
                     $(
                     if t.$idx.is_none() {
@@ -74,7 +74,7 @@ macro_rules! tuple_impls {
             }
             impl<'columnar, $($T),+> Iterator for Col<($(::std::slice::IterMut<'columnar, $T>),+,)> {
                 type Item = ($(&'columnar mut $T),+,);
-                fn next<'b>(&'b mut self) -> Option<Self::Item> {
+                fn next(&mut self) -> Option<Self::Item> {
                     let t = ($(self.t.$idx.next()),+,);
                     $(
                     if t.$idx.is_none() {
