@@ -114,13 +114,14 @@ There's a small benchmark. It shows that the columnar format can be substantiall
 certain operations. Run it using Rust nightly using something like this:
 ```
 % rustup run nightly cargo bench
-    Finished release [optimized + debuginfo] target(s) in 0.0 secs
 [...]
-running 4 tests
-test data_columnar            ... bench:   1,696,509 ns/iter (+/- 29,321)
-test data_columnar_add_assign ... bench:   5,868,536 ns/iter (+/- 244,826)
-test data_row                 ... bench:  11,575,620 ns/iter (+/- 312,967)
-test data_row_add_assign      ... bench:  25,229,786 ns/iter (+/- 932,355)
+running 6 tests
+test data_bitmap_columnar_add_assign ... bench:  13,178,990 ns/iter (+/- 405,043) = 1909 MB/s
+test data_bitmap_vec_add_assign      ... bench:  39,891,687 ns/iter (+/- 714,537) = 630 MB/s
+test data_columnar                   ... bench:   1,949,104 ns/iter (+/- 79,882) = 4303 MB/s
+test data_columnar_add_assign        ... bench:   5,495,641 ns/iter (+/- 203,841) = 4579 MB/s
+test data_row                        ... bench:  16,817,910 ns/iter (+/- 264,722) = 498 MB/s
+test data_row_add_assign             ... bench:  32,581,004 ns/iter (+/- 759,734) = 772 MB/s
 
-test result: ok. 0 passed; 0 failed; 0 ignored; 4 measured
+test result: ok. 0 passed; 0 failed; 0 ignored; 6 measured; 0 filtered out
 ```
