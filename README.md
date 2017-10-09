@@ -72,6 +72,21 @@ struct DataGen<A: Copy> {
 }
 ```
 
+# Filtered collections
+
+When using columnar types, they might be passed to different downstream functionality without
+exposing all elements in the collection. To avoid intermediate copies, this carte contains
+a filtered collection (`FilteredCollection`.) It is a wrapper around an `&IntoIterator`
+combined with a `Vec<bool>` that stores which items are available in the target collection.
+
+The following example instantiates a `FilteredCollection` and uses its `retain` method to only
+retain a subset of elements in the collection. Note that this does not change the underlying data.
+```rust
+use columnar::bitmap::FilteredCollection;
+let mut bitmap_container = FilteredCollection::new(&container, container.len());
+bitmap_container.retain(|u| p(u));
+```
+
 # Debugging
 
 Columnar creates the required implementations during the compilation process. Sometimes things
