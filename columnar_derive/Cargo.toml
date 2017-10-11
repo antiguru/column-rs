@@ -14,4 +14,4 @@ verbose = [ "rustfmt" ]
 [dependencies]
 syn = "0.11"
 quote = "0.3"
-rustfmt = { version = "0.8", optional = true }
+rustfmt = { version = "0.9", optional = true }
