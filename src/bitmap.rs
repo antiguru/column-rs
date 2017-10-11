@@ -75,10 +75,14 @@ impl<'a, I> Iterator for FilteredCollectionIterator<'a, I>
         while item.is_some() {
             if let Some(valid) = valid {
                 if *valid {
-                    return Some(item.expect("is_some wrong!"))
+                    return Some(item.expect("is_some wrong!"));
                 }
             } else {
-                panic!("Bitmap iterator ended prematurely!");
+                // TODO: panicing here is bad because it might happen much later
+                // than when the problem really happened, i.e. when creating
+                // a FilteredCollection.
+                // panic!("Bitmap iterator ended prematurely!");
+                return None;
             }
             valid = self.iter_bitmap.next();
             item = self.iter_wrapped.next();
