@@ -1,10 +1,16 @@
+//! Provide a `Columnar` representation for tuples.
+
 use ::Columnar;
 
+/// A placeholder struct to wrap a type `T`. Here, `T` is used
+/// to represent different kinds of tuples.
 pub struct Col<T> {
+    /// The wrapped data
     t: T,
 }
 
 // macro for implementing n-ary tuple functions and operations
+#[doc(hidden)]
 macro_rules! tuple_impls {
     ($(
         $Tuple:ident {
