@@ -15,3 +15,6 @@ verbose = [ "rustfmt" ]
 syn = "0.11"
 quote = "0.3"
 rustfmt = { version = "0.9", optional = true }
+
+[dev-dependencies]
+columnar = { path = ".."}

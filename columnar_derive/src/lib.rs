@@ -1,3 +1,15 @@
+//! Derive a `Columnar` representation for a struct.
+//!
+//! # Examples
+//!
+//! ```rust
+//! #[macro_use] extern crate columnar_derive;
+//! extern crate columnar;
+//! #[derive(Columnar)]
+//! struct Data {x: usize, y: u64}
+//! # fn main() {}
+//! ```
+
 #![recursion_limit="128"]
 
 #![cfg(not(test))]
@@ -13,10 +25,9 @@ extern crate rustfmt;
 use proc_macro::TokenStream;
 use syn::Ident;
 
-
-
 const COLUMNAR_LIFETIME: &str = "'columnar";
 
+#[doc(hidden)]
 #[proc_macro_derive(Columnar)]
 pub fn derive_columnar(input: TokenStream) -> TokenStream {
     let source = input.to_string();
