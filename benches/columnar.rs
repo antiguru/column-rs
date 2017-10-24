@@ -9,7 +9,7 @@ use columnar::bitmap::FilteredCollection;
 use std::mem::size_of;
 
 // The data for the benchmark, consiting of 8x64b=512b which is a cache line on most architectures
-#[derive(Columnar, Debug, Default)]
+#[derive(Columnar, Debug, Default, Clone)]
 struct Data {
     id: usize,
     val: f64,
@@ -57,7 +57,7 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = ca.iter().zip(cb.iter()).zip(cr.iter_mut());
         for ((ea, eb), er) in zip {
-            *er.val /= ea.val + eb.val;
+            *er.val += ea.val + eb.val;
         };
     })
 }
@@ -79,7 +79,7 @@ fn data_row_add_assign(bench: &mut test::Bencher) {
     bench.iter(|| {
         let zip: ::std::iter::Zip<_, _> = a.iter().zip(b.iter()).zip(r.iter_mut());
         for ((ea, eb), er) in zip {
-            er.val /= ea.val + eb.val;
+            er.val += ea.val + eb.val;
         };
     })
 }
@@ -120,12 +120,15 @@ fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
     test::black_box(r.first().unwrap().dummy);
     cr.extend(r);
     let mut bitmap_container: FilteredCollection<_> = FilteredCollection::new(&ca, ca.len());
+    // Retain every second element
     bitmap_container.retain(|d| d.id & 1 == 1);
+    // We touch three values but the bitmap only exposes every second element
     bench.bytes = (size_of::<f64>() * size * 3 / 2) as u64;
     bench.iter(|| {
+        // iterate the filtered collection and zip it with `cb` and `cr`.
         let zip: ::std::iter::Zip<_, _> = bitmap_container.iter().zip(cb.iter()).zip(cr.iter_mut());
         for ((ea, eb), er) in zip {
-            *er.val /= ea.val + eb.val;
+            *er.val += ea.val + eb.val;
         };
     })
 }
@@ -144,12 +147,15 @@ fn data_bitmap_vec_add_assign(bench: &mut test::Bencher) {
     }
     test::black_box(r.first().unwrap().dummy);
     let mut bitmap_container: FilteredCollection<_> = FilteredCollection::new(&a, a.len());
+    // Retain every second element
     bitmap_container.retain(|d| d.id & 1 == 1);
+    // We touch three values but the bitmap only exposes every second element
     bench.bytes = (size_of::<f64>() * size * 3 / 2) as u64;
     bench.iter(|| {
+        // iterate the filtered collection and zip it with `b` and `r`.
         let zip: ::std::iter::Zip<_, _> = bitmap_container.iter().zip(b.iter()).zip(r.iter_mut());
         for ((ea, eb), er) in zip {
-            er.val /= ea.val + eb.val;
+            er.val += ea.val + eb.val;
         };
     })
 }
