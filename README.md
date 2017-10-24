@@ -74,14 +74,6 @@ Element: DataRef { id: 0, val: 6.282 }
 Element: DataRef { id: 1, val: 84 }
 ```
 
-Take the performance numbers with a grain of salt. The speedup from using a columnar
-representation originates from loading less and more dense data into memory. It will only
-show any benefit of not all elements of a struct are accessed in a tight loop, because
-only then we can reduce the number of bytes transferred into the CPU. However, when all
-data is touched, i.e. all columns have to be loaded, the speedup may be negligible or even
-negative. Also, there is a cost associated with transforming a row-based representation
-into a column representation.
-
 # Generic types
 
 The generated code dereferences values to materialize elements for `to_owned`.
@@ -149,3 +141,12 @@ test data_row_add_assign             ... bench:  32,581,004 ns/iter (+/- 759,734
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 6 measured; 0 filtered out
 ```
+
+Take the performance numbers with a grain of salt. The speedup from using a columnar
+representation originates from loading less and more dense data into memory. It will only
+show any benefit of not all elements of a struct are accessed in a tight loop, because
+only then we can reduce the number of bytes transferred into the CPU. However, when all
+data is touched, i.e. all columns have to be loaded, the speedup may be negligible or even
+negative. Also, there is a cost associated with transforming a row-based representation
+into a column representation.
+
