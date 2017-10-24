@@ -146,6 +146,14 @@ impl<'a> ColumnarData<'a> {
         self.new_columnar_struct_impl()
     }
 
+    fn get_first_field_name(&self) -> syn::Ident {
+        if let Some(name) = self.fields.first().expect("At least one field required").clone().ident {
+            name
+        } else {
+            syn::Ident::new("0")
+        }
+    }
+
     fn new_columnar_struct_impl(&self) -> quote::Tokens {
         let ref_tokens = self.build_ref_type();
         let ref_mut_tokens = self.build_ref_mut_type();
@@ -374,11 +382,7 @@ impl<'a> ColumnarData<'a> {
     }
 
     fn build_columnar_len_impl(&self) -> quote::Tokens {
-        let name = if let Some(name) = self.fields.first().expect("At least one field required").clone().ident {
-            name
-        } else {
-            syn::Ident::new("0")
-        };
+        let name = self.get_first_field_name();
         quote! {
             fn len(&self) -> usize {
                 self.#name.len()
