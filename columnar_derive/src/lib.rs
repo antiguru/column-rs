@@ -311,6 +311,10 @@ impl<'a> ColumnarData<'a> {
         let iter_mut = self.build_columnar_iter_impl(&self.type_iter_mut, "iter_mut", "mut", &ty_generics);
         let len = self.build_columnar_len_impl();
         let is_empty = self.build_columnar_is_empty_impl();
+        let util = self.build_columnar_util_impl();
+        let capacity = self.build_columnar_capacity_impl();
+        let index = self.build_columnar_index_impl();
+        let index_mut = self.build_columnar_index_mut_impl();
 
         let ref type_container = self.type_container;
 
@@ -322,6 +326,10 @@ impl<'a> ColumnarData<'a> {
                 #iter_mut
                 #len
                 #is_empty
+                #util
+                #capacity
+                #index
+                #index_mut
             }
 
             #[allow(dead_code)]
@@ -360,6 +368,57 @@ impl<'a> ColumnarData<'a> {
                 #name {
                     #(#names: Vec::with_capacity(capacity)),*
                 }
+            }
+        }
+    }
+
+
+    fn build_columnar_util_impl(&self) -> quote::Tokens {
+        // Encapsulate fields in Vec
+        let names: Vec<_> = self.fields.iter().map(|f| f.ident.clone().unwrap()).collect();
+        let names2 = names.clone();
+        quote! {
+            fn clear(&mut self) {
+                #(self.#names.clear());*
+            }
+
+            fn reserve(&mut self, additional: usize) {
+                #(self.#names2.reserve(additional));*
+            }
+        }
+    }
+
+    fn build_columnar_capacity_impl(&self) -> quote::Tokens {
+        let name = self.get_first_field_name();
+
+        quote! {
+            fn capacity(&self) -> usize {
+                self.#name.capacity()
+            }
+        }
+    }
+
+    fn build_columnar_index_impl(&self) -> quote::Tokens {
+        let ref type_columnar = self.ast.ident;
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+        let names: Vec<_> = self.fields.iter().map(|f| f.ident.clone().unwrap()).collect();
+        let names2 = names.clone();
+        quote! {
+            fn index(&self, index: usize) -> #type_columnar #ty_generics {
+                #type_columnar { #(#names: self.#names2[index]),* }
+            }
+
+        }
+    }
+
+    fn build_columnar_index_mut_impl(&self) -> quote::Tokens {
+        let ref type_ref_mut = self.type_ref_mut;
+        let (_impl_generics, ty_generics, _where_clause) = self.ast.generics.split_for_impl();
+        let names: Vec<_> = self.fields.iter().map(|f| f.ident.clone().unwrap()).collect();
+        let names2 = names.clone();
+        quote! {
+            fn index_mut(&mut self, index: usize) -> #type_ref_mut #ty_generics {
+                #type_ref_mut { #(#names: &mut self.#names2[index]),* }
             }
         }
     }
