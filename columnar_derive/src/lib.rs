@@ -61,7 +61,6 @@ fn print_generated_code(result_string: &String, ast: &syn::MacroInput, source: S
     let config = rustfmt::config::Config::default();
     let (error_summary, file_map, _report) = rustfmt::format_input::<std::io::Stdout>(input, &config, None)
         .unwrap();
-    assert!(error_summary.has_no_errors());
     for &(ref file_name, ref text) in &file_map {
         if file_name == "stdin" {
             let text = text.to_string();
@@ -74,6 +73,7 @@ fn print_generated_code(result_string: &String, ast: &syn::MacroInput, source: S
             break;
         }
     }
+    assert!(error_summary.has_no_errors());
     Ok(())
 }
 
