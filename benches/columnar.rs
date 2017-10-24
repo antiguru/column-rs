@@ -159,3 +159,21 @@ fn data_bitmap_vec_add_assign(bench: &mut test::Bencher) {
         };
     })
 }
+
+/// Perform assign operation on columnar type, input=output
+#[bench]
+fn data_row_to_columnar(b: &mut test::Bencher) {
+    let size = 1 << 20;
+    let mut a = Vec::with_capacity(size);
+    for i in 0..size {
+        a.push(Data { id: i, val: 15., ..Data::default()});
+    }
+    b.bytes = (size_of::<Data>() * size) as u64;
+    let mut dc = <Data as Columnar>::with_capacity(size);
+    let a = &a;
+    b.iter(move || {
+        dc.clear();
+        dc.extend(a.iter().cloned());
+    })
+}
+
