@@ -3,6 +3,7 @@ name = "columnar"
 version = "0.1.0"
 publish = false
 authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
+license = "MIT OR Apache-2.0"
 
 [[example]]
 name = "columnar"
