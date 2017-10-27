@@ -4,9 +4,9 @@
 // http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
-//! Provide a `Columnar` representation for tuples.
+//! Provide a `Column` representation for tuples.
 
-use ::Columnar;
+use ::Column;
 
 /// A placeholder struct to wrap a type `T`. Here, `T` is used
 /// to represent different kinds of tuples.
@@ -25,22 +25,22 @@ macro_rules! tuple_impls {
     )+) => {
         $(
 
-            impl<'columnar, $($T),+> Col<($(Vec<$T>),+,)> {
-                pub fn iter(&'columnar self) -> Col<($(::std::slice::Iter<'columnar, $T>),+,)> {
+            impl<'column, $($T),+> Col<($(Vec<$T>),+,)> {
+                pub fn iter(&'column self) -> Col<($(::std::slice::Iter<'column, $T>),+,)> {
                     Col { t: ($(self.t.$idx.iter()),+,) }
                 }
-                pub fn iter_mut(&'columnar mut self) -> Col<($(::std::slice::IterMut<'columnar, $T>),+,)> {
+                pub fn iter_mut(&'column mut self) -> Col<($(::std::slice::IterMut<'column, $T>),+,)> {
                     Col { t: ($(self.t.$idx.iter_mut()),+,) }
                 }
-                pub fn len(&'columnar self) -> usize {
+                pub fn len(&'column self) -> usize {
                     self.t.0.len()
                 }
-                pub fn is_empty(&'columnar self) -> bool {
+                pub fn is_empty(&'column self) -> bool {
                     self.t.0.is_empty()
                 }
             }
 
-            impl<'columnar, $($T),+> Columnar<'columnar> for Col<($($T),+,)> {
+            impl<'column, $($T),+> Column<'column> for Col<($($T),+,)> {
                 type Output = Col<($(Vec<$T>),+,)>;
                 fn new() -> Self::Output {
                     Col { t: ($(Vec::<$T>::new()),+,) }
@@ -50,22 +50,22 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<'columnar, $($T),+> Extend<($($T),+,)> for Col<($(Vec<$T>),+,)> {
+            impl<'column, $($T),+> Extend<($($T),+,)> for Col<($(Vec<$T>),+,)> {
                 fn extend<T: IntoIterator<Item = ($($T),+,)>>(&mut self, iter: T) {
                     for element in iter {
                         ($(self.t.$idx.push(element.$idx)),+);
                     }
                 }
             }
-            impl<'columnar, $($T),+> IntoIterator for &'columnar Col<($(Vec<$T>),+,)> {
-                type Item = ($(&'columnar $T),+,);
-                type IntoIter = Col<($(::std::slice::Iter<'columnar, $T>),+,)>;
+            impl<'column, $($T),+> IntoIterator for &'column Col<($(Vec<$T>),+,)> {
+                type Item = ($(&'column $T),+,);
+                type IntoIter = Col<($(::std::slice::Iter<'column, $T>),+,)>;
                 fn into_iter(self) -> Self::IntoIter {
                     self.iter()
                 }
             }
-            impl<'columnar, $($T),+> Iterator for Col<($(::std::slice::Iter<'columnar, $T>),+,)> {
-                type Item = ($(&'columnar $T),+,);
+            impl<'column, $($T),+> Iterator for Col<($(::std::slice::Iter<'column, $T>),+,)> {
+                type Item = ($(&'column $T),+,);
                 fn next(&mut self) -> Option<Self::Item> {
                     let t = ($(self.t.$idx.next()),+,);
                     $(
@@ -77,15 +77,15 @@ macro_rules! tuple_impls {
                     Some(t)
                 }
             }
-            impl<'columnar, $($T),+> IntoIterator for &'columnar mut Col<($(Vec<$T>),+,)> {
-                type Item = ($(&'columnar mut $T),+,);
-                type IntoIter = Col<($(::std::slice::IterMut<'columnar, $T>),+,)>;
+            impl<'column, $($T),+> IntoIterator for &'column mut Col<($(Vec<$T>),+,)> {
+                type Item = ($(&'column mut $T),+,);
+                type IntoIter = Col<($(::std::slice::IterMut<'column, $T>),+,)>;
                 fn into_iter(self) -> Self::IntoIter {
                     self.iter_mut()
                 }
             }
-            impl<'columnar, $($T),+> Iterator for Col<($(::std::slice::IterMut<'columnar, $T>),+,)> {
-                type Item = ($(&'columnar mut $T),+,);
+            impl<'column, $($T),+> Iterator for Col<($(::std::slice::IterMut<'column, $T>),+,)> {
+                type Item = ($(&'column mut $T),+,);
                 fn next(&mut self) -> Option<Self::Item> {
                     let t = ($(self.t.$idx.next()),+,);
                     $(

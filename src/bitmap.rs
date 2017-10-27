@@ -7,7 +7,7 @@
 //! Provide a filtered view on a collection.
 //! # Examples
 //! ```
-//! use columnar::bitmap::FilteredCollection;
+//! use column::bitmap::FilteredCollection;
 //! let collection = vec![1, 2, 3];
 //! let mut filtered = FilteredCollection::new(&collection, collection.len());
 //! filtered.retain(|&e| *e > 1);
@@ -54,7 +54,7 @@ impl<'a, A> FilteredCollection<'a, A>
     ///
     /// # Examples
     /// ```
-    /// # use columnar::bitmap::FilteredCollection;
+    /// # use column::bitmap::FilteredCollection;
     /// let collection = vec![1, 2, 3];
     /// let mut filtered = FilteredCollection::new(&collection, collection.len());
     /// ```
@@ -69,7 +69,7 @@ impl<'a, A> FilteredCollection<'a, A>
     /// Obtain an iterator on the visible elements in this `FilteredCollection`
     /// # Examples
     /// ```
-    /// use columnar::bitmap::FilteredCollection;
+    /// use column::bitmap::FilteredCollection;
     /// let collection : Vec<u64> = vec![1, 2, 3];
     /// let mut filtered = FilteredCollection::new(&collection, collection.len());
     /// filtered.retain(|&e| *e < 3);
@@ -93,7 +93,7 @@ impl<'a, A> FilteredCollection<'a, A>
     ///
     /// # Examples
     /// ```
-    /// use columnar::bitmap::FilteredCollection;
+    /// use column::bitmap::FilteredCollection;
     /// let collection : Vec<u64> = vec![1, 2, 3];
     /// let mut filtered = FilteredCollection::new(&collection, collection.len());
     /// filtered.retain(|&e| *e < 3);
@@ -106,7 +106,7 @@ impl<'a, A> FilteredCollection<'a, A>
     /// Test if this `FilteredCollection` has any visibile elements
     /// # Examples
     /// ```
-    /// use columnar::bitmap::FilteredCollection;
+    /// use column::bitmap::FilteredCollection;
     /// let collection : Vec<u64> = vec![1, 2, 3];
     /// let mut filtered = FilteredCollection::new(&collection, collection.len());
     /// filtered.retain(|_| false);
@@ -120,7 +120,7 @@ impl<'a, A> FilteredCollection<'a, A>
     /// Supply a function to select visible elements in this `FilteredCollection`
     /// # Examples
     /// ```
-    /// use columnar::bitmap::FilteredCollection;
+    /// use column::bitmap::FilteredCollection;
     /// let collection : Vec<u64> = vec![1, 2, 3];
     /// let mut filtered = FilteredCollection::new(&collection, collection.len());
     /// filtered.retain(|&e| *e == 2);

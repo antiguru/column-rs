@@ -5,12 +5,12 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-#[macro_use] extern crate columnar_derive;
-extern crate columnar;
-use columnar::bitmap::FilteredCollection;
-use columnar::Columnar;
+#[macro_use] extern crate column_derive;
+extern crate column;
+use column::bitmap::FilteredCollection;
+use column::Column;
 
-#[derive(Eq, PartialEq, Debug, Clone, Columnar)]
+#[derive(Eq, PartialEq, Debug, Clone, Column)]
 pub struct Useless {
     pub a: u64,
     b: Option<i64>,
@@ -20,12 +20,12 @@ pub struct Useless {
 fn test() {
     let u = vec![Useless { a: 1, b: None}, Useless { a: 1, b: Some(-1)}];
     let original = u.clone();
-    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
-    columnar.extend(u.into_iter());
-    let mut bitmap_container = FilteredCollection::new(&columnar, columnar.len());
-    let result: Vec<_> = columnar.iter().map(|e| UselessRef::to_owned(&e)).collect();
+    let mut column = <Useless as Column>::with_capacity(u.len());
+    column.extend(u.into_iter());
+    let mut bitmap_container = FilteredCollection::new(&column, column.len());
+    let result: Vec<_> = column.iter().map(|e| UselessRef::to_owned(&e)).collect();
     assert_eq!(original, result);
-    assert_eq!(columnar.len(), original.len());
+    assert_eq!(column.len(), original.len());
     assert_eq!(bitmap_container.len(), original.len());
 
     for c in bitmap_container.iter() {
@@ -47,12 +47,12 @@ fn test_mul_2() {
     for e in &mut original {
         e.a *= 2;
     }
-    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
-    columnar.extend(u.into_iter());
-    for e in &mut columnar {
+    let mut column = <Useless as Column>::with_capacity(u.len());
+    column.extend(u.into_iter());
+    for e in &mut column {
         *e.a *= 2;
     }
-    let result: Vec<_> = columnar.iter().map(|e| UselessRef::to_owned(&e)).collect();
+    let result: Vec<_> = column.iter().map(|e| UselessRef::to_owned(&e)).collect();
     assert_eq!(original, result);
 }
 
@@ -63,9 +63,9 @@ fn test_retain() {
     for a in 0..size {
         u.push(Useless {a, b: None });
     }
-    let mut columnar = <Useless as Columnar>::with_capacity(u.len());
-    columnar.extend(u.into_iter());
-    let mut bitmap_container = FilteredCollection::new(&columnar, columnar.len());
+    let mut column = <Useless as Column>::with_capacity(u.len());
+    column.extend(u.into_iter());
+    let mut bitmap_container = FilteredCollection::new(&column, column.len());
     bitmap_container.retain(|u| u.a.trailing_zeros() > 0);
     println!("bitmap_container: {:?}", bitmap_container);
     assert_eq!(bitmap_container.len(), size as usize / 2);

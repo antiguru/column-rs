@@ -1,14 +1,14 @@
 [package]
-name = "columnar_derive"
+name = "column_derive"
 version = "0.0.1"
 authors = ["Moritz Hoffmann <antiguru@gmail.com>"]
-homepage = "https://github.com/antiguru/columnar-rs"
-repository = "https://github.com/antiguru/columnar-rs.git"
+homepage = "https://github.com/antiguru/column-rs"
+repository = "https://github.com/antiguru/column-rs.git"
 description = "Columnar data format in memory (Derive)"
 license = "MIT OR Apache-2.0"
 
 [lib]
-name = "columnar_derive"
+name = "column_derive"
 proc-macro = true
 
 [features]

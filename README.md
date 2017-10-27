@@ -1,6 +1,6 @@
-# Columnar #
+# Column #
 
-`columnar` is a Rust library to represent vectors of a certain type
+`column` is a Rust library to represent vectors of a certain type
 in a columnar format. The columnar representation is beneficial when
 iterating a large number of elements but only looking at a subset
 of a type's fields.
@@ -22,29 +22,29 @@ dual licensed as above, without any additional terms or conditions.
 
 # An example
 
-To use `columnar`, add the following dependency to your project's
+To use `column`, add the following dependency to your project's
 `Cargo.toml`:
 
 ```toml
 [dependencies]
-columnar = { git = "https://github.com/antiguru/columnar-rs.git" }
+column = { git = "https://github.com/antiguru/column-rs.git" }
 ```
 
-This will bring in the `columnar` crate from Github (this will hopefully change!),
+This will bring in the `column` crate from Github (this will hopefully change!),
 which should allow you to use regular structs in a column-based memory layout.
 
 ```rust
-extern crate columnar;
-#[macro_use] extern crate columnar_derive;
+extern crate column;
+#[macro_use] extern crate column_derive;
 
-#[derive(Columnar, Debug)]
+#[derive(Column, Debug)]
 struct Data {
     id: usize,
     val: f64,
 }
 
 fn main() {
-    let mut u = <Data as Columnar>::new();
+    let mut u = <Data as Column>::new();
 
     let ds = vec![Data { id: 0, val: 3.141 }, Data { id: 1, val: 42.}];
     u.extend(ds);
@@ -62,7 +62,7 @@ fn main() {
 }
 ```
 
-This example is contained in the `columnar` crate, you can run it from
+This example is contained in the `column` crate, you can run it from
 the crate's root directory by typing
 
 ```
@@ -82,7 +82,7 @@ Rust will complain about it. For example, this will produce a working generic co
 type:
 
 ```rust
-#[derive(Columnar)]
+#[derive(Column)]
 struct DataGen<A: Copy> {
     id: A,
 }
@@ -98,23 +98,23 @@ combined with a `Vec<bool>` that stores which items are available in the target 
 The following example instantiates a `FilteredCollection` and uses its `retain` method to only
 retain a subset of elements in the collection. Note that this does not change the underlying data.
 ```rust
-use columnar::bitmap::FilteredCollection;
+use column::bitmap::FilteredCollection;
 let mut bitmap_container = FilteredCollection::new(&container, container.len());
 bitmap_container.retain(|u| p(u));
 ```
 
 # Debugging
 
-Columnar creates the required implementations during the compilation process. Sometimes things
+Column creates the required implementations during the compilation process. Sometimes things
 go wrong and debugging the generated code is rather tedious. For this reason, a flag `verbose`
-exists. It forces `columnar` to write the intermediate code to the target directory. For a type
-`Data`, it will generate the file `target/derive_columnar_Data.rs`. (If there's a more elegant way,
+exists. It forces `column` to write the intermediate code to the target directory. For a type
+`Data`, it will generate the file `target/derive_column_Data.rs`. (If there's a more elegant way,
 please open an issue or send a pull request!) Insert the following snippet in `Cargo.toml` to
 enable verbose output:
 
 ```toml
 [dependencies]
-columnar = { git = "https://github.com/antiguru/columnar-rs.git", features = [ "verbose" ] }
+column = { git = "https://github.com/antiguru/column-rs.git", features = [ "verbose" ] }
 ```
 
 The feature can also be activated on the command line when working on this project. The
@@ -132,10 +132,10 @@ certain operations. Run it using Rust nightly using something like this:
 % rustup run nightly cargo bench
 [...]
 running 6 tests
-test data_bitmap_columnar_add_assign ... bench:  13,178,990 ns/iter (+/- 405,043) = 1909 MB/s
+test data_bitmap_column_add_assign   ... bench:  13,178,990 ns/iter (+/- 405,043) = 1909 MB/s
 test data_bitmap_vec_add_assign      ... bench:  39,891,687 ns/iter (+/- 714,537) = 630 MB/s
-test data_columnar                   ... bench:   1,949,104 ns/iter (+/- 79,882) = 4303 MB/s
-test data_columnar_add_assign        ... bench:   5,495,641 ns/iter (+/- 203,841) = 4579 MB/s
+test data_column                     ... bench:   1,949,104 ns/iter (+/- 79,882) = 4303 MB/s
+test data_column_add_assign          ... bench:   5,495,641 ns/iter (+/- 203,841) = 4579 MB/s
 test data_row                        ... bench:  16,817,910 ns/iter (+/- 264,722) = 498 MB/s
 test data_row_add_assign             ... bench:  32,581,004 ns/iter (+/- 759,734) = 772 MB/s
 

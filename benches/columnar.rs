@@ -7,30 +7,30 @@
 #![feature(test)]
 
 extern crate test;
-extern crate columnar;
-use columnar::Columnar;
-use columnar::bitmap::FilteredCollection;
-#[macro_use] extern crate columnar_derive;
+extern crate column;
+use column::Column;
+use column::bitmap::FilteredCollection;
+#[macro_use] extern crate column_derive;
 
 use std::mem::size_of;
 
 // The data for the benchmark, consiting of 8x64b=512b which is a cache line on most architectures
-#[derive(Columnar, Debug, Default, Clone)]
+#[derive(Column, Debug, Default, Clone)]
 struct Data {
     id: usize,
     val: f64,
     dummy: [usize; 6],
 }
 
-/// Perform assign operation on columnar type, input=output
+/// Perform assign operation on column type, input=output
 #[bench]
-fn data_columnar(b: &mut test::Bencher) {
+fn data_column(b: &mut test::Bencher) {
     let size = 1 << 20;
     let mut a = Vec::with_capacity(size);
     for i in 0..size {
         a.push(Data { id: i, val: 15., ..Data::default()});
     }
-    let mut dc = <Data as Columnar>::with_capacity(size);
+    let mut dc = <Data as Column>::with_capacity(size);
     dc.extend(a);
     b.bytes = (size_of::<usize>() * size) as u64;
     b.iter(|| {
@@ -42,7 +42,7 @@ fn data_columnar(b: &mut test::Bencher) {
 
 /// Perform add/assign operation on row type with three inputs, one output
 #[bench]
-fn data_columnar_add_assign(bench: &mut test::Bencher) {
+fn data_column_add_assign(bench: &mut test::Bencher) {
     let size = 1 << 20;
     let mut a = Vec::with_capacity(size);
     let mut b = Vec::with_capacity(size);
@@ -52,9 +52,9 @@ fn data_columnar_add_assign(bench: &mut test::Bencher) {
         b.push(Data { id: i + size, val: size as f64 + i as f64 * 0.6, ..Data::default()});
         r.push(Data { id: 0, val: 1., ..Data::default()});
     }
-    let mut ca = <Data as Columnar>::with_capacity(size);
-    let mut cb = <Data as Columnar>::with_capacity(size);
-    let mut cr = <Data as Columnar>::with_capacity(size);
+    let mut ca = <Data as Column>::with_capacity(size);
+    let mut cb = <Data as Column>::with_capacity(size);
+    let mut cr = <Data as Column>::with_capacity(size);
     ca.extend(a);
     cb.extend(b);
     test::black_box(r.first().unwrap().dummy);
@@ -106,9 +106,9 @@ fn data_row(b: &mut test::Bencher) {
     })
 }
 
-/// Perform add/assign operation on columnar type with three inputs, one output
+/// Perform add/assign operation on column type with three inputs, one output
 #[bench]
-fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
+fn data_bitmap_column_add_assign(bench: &mut test::Bencher) {
     let size = 1 << (20 + 1);
     let mut a = Vec::with_capacity(size);
     let mut b = Vec::with_capacity(size);
@@ -118,9 +118,9 @@ fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
         b.push(Data { id: i + size, val: size as f64 + i as f64 * 0.6, ..Data::default()});
         r.push(Data { id: 0, val: 1., ..Data::default()});
     }
-    let mut ca = <Data as Columnar>::with_capacity(size);
-    let mut cb = <Data as Columnar>::with_capacity(size);
-    let mut cr = <Data as Columnar>::with_capacity(size);
+    let mut ca = <Data as Column>::with_capacity(size);
+    let mut cb = <Data as Column>::with_capacity(size);
+    let mut cr = <Data as Column>::with_capacity(size);
     ca.extend(a);
     cb.extend(b);
     test::black_box(r.first().unwrap().dummy);
@@ -139,7 +139,7 @@ fn data_bitmap_columnar_add_assign(bench: &mut test::Bencher) {
     })
 }
 
-/// Perform add/assign operation on columnar type with three inputs, one output
+/// Perform add/assign operation on column type with three inputs, one output
 #[bench]
 fn data_bitmap_vec_add_assign(bench: &mut test::Bencher) {
     let size = 1 << (20 + 1);
@@ -166,16 +166,16 @@ fn data_bitmap_vec_add_assign(bench: &mut test::Bencher) {
     })
 }
 
-/// Perform assign operation on columnar type, input=output
+/// Perform assign operation on column type, input=output
 #[bench]
-fn data_row_to_columnar(b: &mut test::Bencher) {
+fn data_row_to_column(b: &mut test::Bencher) {
     let size = 1 << 20;
     let mut a = Vec::with_capacity(size);
     for i in 0..size {
         a.push(Data { id: i, val: 15., ..Data::default()});
     }
     b.bytes = (size_of::<Data>() * size) as u64;
-    let mut dc = <Data as Columnar>::with_capacity(size);
+    let mut dc = <Data as Column>::with_capacity(size);
     let a = &a;
     b.iter(move || {
         dc.clear();

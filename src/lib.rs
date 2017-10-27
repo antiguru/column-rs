@@ -4,7 +4,7 @@
 // http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
-//! Columnar is a Rust library to repesent collections of elements
+//! Column is a Rust library to repesent collections of elements
 //! in a columnar memory layout.
 
 pub mod bitmap;
@@ -16,16 +16,16 @@ pub mod tuple;
 /// # Example
 ///
 /// ```
-/// # #[macro_use] extern crate columnar_derive;
-/// # extern crate columnar;
-/// # use columnar::Columnar;
-/// #[derive(Columnar)]
+/// # #[macro_use] extern crate column_derive;
+/// # extern crate column;
+/// # use column::Column;
+/// #[derive(Column)]
 /// struct Data {x: usize}
 /// # fn main() {
-/// let columnar = <Data as Columnar>::new();
+/// let column = <Data as Column>::new();
 /// # }
 /// ```
-pub trait Columnar<'a> {
+pub trait Column<'a> {
 
     /// The type representing the wrapped data in a columnar data layout.
     type Output;
@@ -34,13 +34,13 @@ pub trait Columnar<'a> {
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate columnar_derive;
-    /// # extern crate columnar;
-    /// # use columnar::Columnar;
-    /// #[derive(Columnar)]
+    /// # #[macro_use] extern crate column_derive;
+    /// # extern crate column;
+    /// # use column::Column;
+    /// #[derive(Column)]
     /// struct Data {x: usize}
     /// # fn main() {
-    /// let columnar = <Data as Columnar>::new();
+    /// let column = <Data as Column>::new();
     /// # }
     /// ```
     fn new() -> Self::Output;
@@ -49,13 +49,13 @@ pub trait Columnar<'a> {
     /// # Example
     ///
     /// ```
-    /// # #[macro_use] extern crate columnar_derive;
-    /// # extern crate columnar;
-    /// # use columnar::Columnar;
-    /// #[derive(Columnar)]
+    /// # #[macro_use] extern crate column_derive;
+    /// # extern crate column;
+    /// # use column::Column;
+    /// #[derive(Column)]
     /// struct Data {x: usize}
     /// # fn main() {
-    /// let columnar = <Data as Columnar>::with_capacity(200);
+    /// let column = <Data as Column>::with_capacity(200);
     /// # }
     /// ```
     fn with_capacity(len: usize) -> Self::Output;

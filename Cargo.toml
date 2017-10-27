@@ -5,8 +5,8 @@ publish = true
 authors = ["Moritz Hoffmann <antiguru@gmail.com>"]
 license = "MIT OR Apache-2.0"
 
-homepage = "https://github.com/antiguru/columnar-rs"
-repository = "https://github.com/antiguru/columnar-rs.git"
+homepage = "https://github.com/antiguru/column-rs"
+repository = "https://github.com/antiguru/column-rs.git"
 description = "Columnar data format in memory"
 
 [[example]]
@@ -15,11 +15,11 @@ name = "columnar"
 [features]
 # No features enabled
 default = [ ]
-# Re-expose columnar_derive/verbose as verbose
-verbose = [ "columnar_derive/verbose" ]
+# Re-expose column_derive/verbose as verbose
+verbose = [ "column_derive/verbose" ]
 
 [dependencies]
-columnar_derive = { path = "columnar_derive", version = "0.0.1" }
+column_derive = { path = "column_derive", version = "0.0.1" }
 
 [profile.release]
 # Include debug info in release targets
