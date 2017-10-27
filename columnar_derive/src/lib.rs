@@ -8,7 +8,7 @@
 //!
 //! # Examples
 //!
-//! ```rust
+//! ```rust,ignore
 //! #[macro_use] extern crate columnar_derive;
 //! extern crate columnar;
 //! #[derive(Columnar)]
