@@ -1,9 +1,13 @@
 [package]
 name = "columnar"
-version = "0.1.0"
-publish = false
-authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
+version = "0.0.1"
+publish = true
+authors = ["Moritz Hoffmann <antiguru@gmail.com>"]
 license = "MIT OR Apache-2.0"
+
+homepage = "https://github.com/antiguru/columnar-rs"
+repository = "https://github.com/antiguru/columnar-rs.git"
+description = "Columnar data format in memory"
 
 [[example]]
 name = "columnar"
@@ -15,7 +19,7 @@ default = [ ]
 verbose = [ "columnar_derive/verbose" ]
 
 [dependencies]
-columnar_derive = { path = "columnar_derive" }
+columnar_derive = { path = "columnar_derive", version = "0.0.1" }
 
 [profile.release]
 # Include debug info in release targets

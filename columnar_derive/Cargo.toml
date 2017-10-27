@@ -1,7 +1,11 @@
 [package]
 name = "columnar_derive"
-version = "0.1.0"
-authors = ["Moritz Hoffmann <moritz.hoffmann@inf.ethz.ch>"]
+version = "0.0.1"
+authors = ["Moritz Hoffmann <antiguru@gmail.com>"]
+homepage = "https://github.com/antiguru/columnar-rs"
+repository = "https://github.com/antiguru/columnar-rs.git"
+description = "Columnar data format in memory (Derive)"
+license = "MIT OR Apache-2.0"
 
 [lib]
 name = "columnar_derive"
